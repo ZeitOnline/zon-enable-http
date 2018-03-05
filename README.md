@@ -34,3 +34,6 @@ While we switch our multiuser wordpress from http to https there will be a phase
 
 ### 1.0.3
 * Update options correctly
+
+### 1.0.4
+* Update options correctly

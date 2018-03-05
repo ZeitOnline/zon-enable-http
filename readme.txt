@@ -4,7 +4,7 @@ Donate link: https://www.zeit.de
 Tags: SSL, https, maintenance  
 Requires at least: 4.6.0  
 Tested up to: 4.9  
-Stable tag: 1.0.3  
+Stable tag: 1.0.4  
 License: GPLv3 or later  
 License URI: http://www.gnu.org/licenses/gpl-3.0.html  
 
@@ -33,4 +33,7 @@ While we switch our multiuser wordpress from http to https there will be a phase
 * Add forgotten instantiation
 
 = 1.0.3 =
+* Update options correctly
+
+= 1.0.4 =
 * Update options correctly
