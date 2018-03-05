@@ -4,7 +4,7 @@ Donate link: https://www.zeit.de
 Tags: SSL, https, maintenance  
 Requires at least: 4.6.0  
 Tested up to: 4.9  
-Stable tag: 1.0.1  
+Stable tag: 1.0.2  
 License: GPLv3 or later  
 License URI: http://www.gnu.org/licenses/gpl-3.0.html  
 
@@ -18,6 +18,7 @@ While we switch our multiuser wordpress from http to https there will be a phase
 
 1. Upload the folder `zon-enalble-hhttp` to the `/wp-content/plugins/` directory or use the Github Updater Plugin to install
 2. (Network) activate the plugin through the 'Plugins' menu in WordPress
+3. For local development w/o https activated, add `define( 'ZON_HTTP_ENABLED', true );` to your `local-config.php`
 
 == Changelog ==
 
@@ -26,3 +27,7 @@ While we switch our multiuser wordpress from http to https there will be a phase
 
 = 1.0.1 =
 * Add forgotten github updater head comment
+
+= 1.0.2 =
+* Make plugin activation locally possible
+* Add forgotten instantiation
