@@ -16,6 +16,7 @@
  * Author URI:        https://www.zeit.de
  * License:           GPL-3.0+
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.txt
+ * GitHub Plugin URI: https://github.com/ZeitOnline/zon-enable-http
  */
 
 // If this file is called directly, abort.
