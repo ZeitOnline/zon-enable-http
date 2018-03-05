@@ -11,7 +11,7 @@
  * Plugin Name:       ZEIT ONLINE Enable HTTP
  * Plugin URI:        https://github.com/zeitonline/zon-enable-http
  * Description:       Filters the home_url from https to http on blogs that are https configured if the request scheme is http
- * Version:           1.0.0
+ * Version:           1.0.1
  * Author:            Nico Brünjes
  * Author URI:        https://www.zeit.de
  * License:           GPL-3.0+
