@@ -11,7 +11,7 @@
  * Plugin Name:       ZEIT ONLINE Enable HTTP
  * Plugin URI:        https://github.com/zeitonline/zon-enable-http
  * Description:       Filters the home_url from https to http on blogs that are https configured if the request scheme is http
- * Version:           1.0.2
+ * Version:           1.0.3
  * Author:            Nico Brünjes
  * Author URI:        https://www.zeit.de
  * License:           GPL-3.0+
@@ -318,7 +318,7 @@ if ( ! defined( 'WPINC' ) ) {
  	public function options_page() {
  		if ( isset( $_POST[ 'submit' ] ) && isset( $_POST[ '_' . self::PREFIX . '_nonce' ] ) &&  wp_verify_nonce( $_POST[ '_' . self::PREFIX . '_nonce' ], self::PREFIX . '_settings_nonce' ) ) {
 
- 			$options = $this->get_options();
+ 			$options = isset( $_POST[ self::SETTINGS ] ) ? $_POST[ self::SETTINGS ] : $this->get_options();
  			$options[ 'http_on' ] = isset( $_POST[ self::SETTINGS ][ 'maint_on' ] ) ? 1 : 0;
 
  			$updated = $this->update_options( $options );
@@ -362,6 +362,10 @@ if ( ! defined( 'WPINC' ) ) {
  	 */
  	public function home_url_filter( $url, $path, $orig_scheme, $blog_id ) {
       	$options = $this->get_options();
+      	echo "dsdkfldskfl";
+      	echo "<pre>";
+      	print_r($options);
+      	echo "</pre>";
       	if ( isset( $options[ 'http_on' ] ) && $options[ 'http_on' ] == 1 ) {
       		// Server Environment set to HTTPS
       		if (
