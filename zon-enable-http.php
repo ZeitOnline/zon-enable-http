@@ -11,7 +11,7 @@
  * Plugin Name:       ZEIT ONLINE Enable HTTP
  * Plugin URI:        https://github.com/zeitonline/zon-enable-http
  * Description:       Filters the home_url from https to http on blogs that are https configured if the request scheme is http
- * Version:           1.0.4
+ * Version:           1.1.0
  * Author:            Nico Brünjes
  * Author URI:        https://www.zeit.de
  * License:           GPL-3.0+
@@ -90,8 +90,10 @@ if ( ! defined( 'WPINC' ) ) {
  			$hook = is_multisite() ? 'network_admin_menu' : 'admin_menu';
  			add_action( $hook, array( $this, 'add_admin_menu' ) );
  		} else {
- 			// add the filter
+ 			// add the url filter
  			add_filter( 'home_url', array( $this, 'home_url_filter' ), 10, 4 );
+ 			// conditionally echo different robtos.txt
+ 			add_filter( 'robots_txt', array( $this, 'robots_txt_filter' ), 10, 2 );
  		}
  	}
 
@@ -305,6 +307,43 @@ if ( ! defined( 'WPINC' ) ) {
       		}
         }
         return $url;
+	}
+
+	/**
+	 * Filter to edit robots.txt on https vs. http
+	 *
+	 * @since  1.1.0
+	 * @param  string 	$output 	robots.txt text
+	 * @param  bool 	$public 	public switch
+	 * @return string         		robots.txt
+	 */
+	public function robots_txt_filter( $output, $public ) {
+		$options = $this->get_options();
+		if ( isset( $options[ 'http_on' ] ) && $options[ 'http_on' ] == 1 ) {
+			if (
+				// ZON live server config
+				( isset( $_SERVER[ 'HTTP_X_ZON_EDGE_PROTO' ] ) && 'http' == strtolower( $_SERVER[ 'HTTP_X_ZON_EDGE_PROTO' ] ) ) ||
+				// development environment
+				( !isset( $_SERVER[ 'HTTP_X_ZON_EDGE_PROTO' ] ) && 'http' == strtolower( $_SERVER[ 'REQUEST_SCHEME' ] ) )
+			) {
+				// https environment
+				$output  = "User-agent: *\n";
+				$output .= "Disallow: /\n";
+				$output .= "Noindex: /\n";
+				$output .= "User-agent: audisto\n";
+				$output .= "Disallow: /temp/\n";
+				$output .= "User-agent: Screaming Frog SEO Spider\n";
+				$output .= "Disallow: /temp/";
+			} else {
+				// http environment
+				$site_url = parse_url( site_url() );
+				$path = ( !empty( $site_url['path'] ) ) ? $site_url['path'] : '';
+				$output  = "Disallow: $path/wp-admin/\n";
+				$output .= "Disallow: /temp/\n";
+				$output .= "Allow: $path/wp-admin/admin-ajax.php";
+			}
+		}
+		return $output;
 	}
 }
 
