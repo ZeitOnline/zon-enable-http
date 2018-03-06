@@ -22,18 +22,32 @@ While we switch our multiuser wordpress from http to https there will be a phase
 
 == Changelog ==
 
-= 1.0.0 =
-* Initial and stable release
+= 1.1.0 =
+* Add conditional output of robots.txt
+* Remove unused funtions
+* Reset state on deactivation
+* Add uninstall routine (remove options)
 
-= 1.0.1 =
-* Add forgotten github updater head comment
+= 1.0.4 =
+* Update options correctly
+
+= 1.0.3 =
+* Update options correctly
 
 = 1.0.2 =
 * Make plugin activation locally possible
 * Add forgotten instantiation
 
-= 1.0.3 =
-* Update options correctly
+= 1.0.1 =
+* Add forgotten github updater head comment
 
-= 1.0.4 =
-* Update options correctly
+= 1.0.0 =
+* Initial and stable release
+
+
+
+
+
+
+
+
