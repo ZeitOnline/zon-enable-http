@@ -11,7 +11,7 @@
  * Plugin Name:       ZEIT ONLINE Enable HTTP
  * Plugin URI:        https://github.com/zeitonline/zon-enable-http
  * Description:       Filters the home_url from https to http on blogs that are https configured if the request scheme is http
- * Version:           1.0.4
+ * Version:           1.1.0
  * Author:            Nico Brünjes
  * Author URI:        https://www.zeit.de
  * License:           GPL-3.0+
@@ -90,8 +90,10 @@ if ( ! defined( 'WPINC' ) ) {
  			$hook = is_multisite() ? 'network_admin_menu' : 'admin_menu';
  			add_action( $hook, array( $this, 'add_admin_menu' ) );
  		} else {
- 			// add the filter
+ 			// add the url filter
  			add_filter( 'home_url', array( $this, 'home_url_filter' ), 10, 4 );
+ 			// conditionally echo different robtos.txt
+ 			add_filter( 'robots_txt', array( $this, 'robots_txt_filter' ), 10, 2 );
  		}
  	}
 
@@ -127,35 +129,9 @@ if ( ! defined( 'WPINC' ) ) {
  	 * @since  1.0.0
  	 */
  	public static function deactivate() {
- 		$deleted = self::getInstance()->delete_all_transients();
- 	}
-
- 	/**
- 	 * Query all transients from the database and hand them to delete_transient
- 	 * use to immediatly delete all cached frames on request or as garbage collection
- 	 *
- 	 * @since  1.0.0
- 	 * @return bool
- 	 */
- 	public function delete_all_transients() {
- 		global $wpdb;
- 		$return_check = true;
- 		$table = is_multisite() ? $wpdb->sitemeta : $wpdb->options;
- 		$needle = is_multisite() ? 'meta_key' : 'option_name';
- 		$name_chunk = is_multisite() ? '_site_transient_' : '_transient_';
- 		$query = "
- 			SELECT `$needle`
- 			FROM `$table`
- 			WHERE `$needle`
- 			LIKE '%transient_" . self::PREFIX . "%'";
- 		$results = $wpdb->get_results( $query );
- 		foreach( $results as $result ) {
- 			$transient = str_replace( $name_chunk, '', $result->$needle );
- 			if ( ! $this->delete_correct_transient( $transient ) ) {
- 				$return_check = false;
- 			}
- 		}
- 		return $return_check;
+ 		$options = $this->get_options();
+ 		$options[ 'http_on' ] = 0;
+ 		$this->update_options( $options );
  	}
 
  	/**
@@ -189,52 +165,6 @@ if ( ! defined( 'WPINC' ) ) {
  	}
 
  	/**
- 	 * Set site transient if multisite environment
- 	 *
- 	 * @since 1.0.0
- 	 * @param string $transient  name of the transient
- 	 * @param mixed  $value      content to set as transient
- 	 * @param int    $expiration time in seconds for maximum cache time
- 	 * @return bool
- 	 */
- 	public function set_correct_transient( $transient, $value, $expiration ) {
- 		if ( is_multisite() ) {
- 			return set_site_transient( $transient, $value, $expiration );
- 		} else {
- 			return set_transient( $transient, $value, $expiration );
- 		}
- 	}
-
- 	/**
- 	 * Get site transient if multisite environment
- 	 *
- 	 * @since 1.0.0
- 	 * @param  string $transient name of the transient
- 	 * @return mixed             content stored in the transient or false if no adequate transient found
- 	 */
- 	public function get_correct_transient( $transient ) {
- 		if ( is_multisite() ) {
- 			return get_site_transient( $transient );
- 		} else {
- 			return get_transient( $transient );
- 		}
- 	}
-
- 	/**
- 	 * Use site transient if multisite environment
- 	 * @param  string $transient name of the transient to delete
- 	 *
- 	 * @return bool
- 	 */
- 	public function delete_correct_transient( $transient ) {
- 		if ( is_multisite() ) {
- 			return delete_site_transient( $transient );
- 		} else {
- 			return delete_transient( $transient );
- 		}
- 	}
-
- 	/**
  	 * Initialise settings and their callbacks for use on admin page
  	 *
  	 * @since  1.0.0
@@ -256,6 +186,32 @@ if ( ! defined( 'WPINC' ) ) {
  			array( $this, 'render_main_switch_checkbox' ),			// rendering callback
  			self::$plugin_name,										// page slug
  			'zonhttp_general_settings'								// section
+ 		);
+
+ 		add_settings_field(
+ 			'http_robots_text',
+ 			'robots.txt für HTTP',
+ 			array( $this, 'render_robots_text_texarea' ),
+ 			self::$plugin_name,
+ 			'zonhttp_general_settings',
+ 			array(
+ 				'setting' => 'http_robots_text',
+ 				'helptext' => 'Robots.txt die für http ausgespielt wird',
+ 				'standard' => $this->standard_robots_text( true )
+ 			)
+ 		);
+
+ 		add_settings_field(
+ 			'https_robots_text',
+ 			'robots.txt für HTTPS',
+ 			array( $this, 'render_robots_text_texarea' ),
+ 			self::$plugin_name,
+ 			'zonhttp_general_settings',
+ 			array(
+ 				'setting' => 'https_robots_text',
+				'helptext' => 'Robots.txt die für https ausgespielt wird',
+				'standard' => $this->standard_robots_text( false )
+ 			)
  		);
  	}
 
@@ -281,6 +237,46 @@ if ( ! defined( 'WPINC' ) ) {
  			<input type="checkbox" value="1" name="<?php echo $settings; ?>[http_on]" <?php checked( 1 == $options[ 'http_on' ] );?>> HTTP Zugriff ermöglichen
  		</label>
  		<?php
+ 	}
+
+ 	/**
+ 	 * Render different textareas
+ 	 *
+ 	 * @since  1.1.0
+ 	 * @param  array $args 	items to render
+ 	 */
+ 	public function render_robots_text_texarea( $args ) {
+ 		$settings = self::SETTINGS;
+ 		$options = $this->get_options();
+ 		$setting = $args[ 'setting' ];
+ 		$text = isset( $options[ $setting ] ) ? $options[ $setting ] : $args[ 'standard' ];
+ 		echo <<<HTML
+ 			<textarea name="{$settings}[{$setting}]" cols="40" rows="10">{$text}</textarea>
+ 			<p class="description">{$args['helptext']}</p>
+ 			<p class="description">Standard:</p>
+ 			<pre><code>{$args['standard']}</code></pre>
+HTML;
+ 	}
+
+ 	/**
+ 	 * Return standard robots.txt
+ 	 *
+ 	 * @param  bool $public render an restricted or unrestrigted robots.txt
+ 	 * @return string 	robots.txt
+ 	 */
+ 	public function standard_robots_text( $public ) {
+ 		$output = '';
+ 		if( $public ) {
+ 			$site_url = parse_url( site_url() );
+ 			$path = ( !empty( $site_url['path'] ) ) ? $site_url['path'] : '';
+ 			$output .= "Disallow: $path/wp-admin/\n";
+ 			$output .= "Disallow: /temp/\n";
+ 			$output .= "Allow: $path/wp-admin/admin-ajax.php";
+ 		} else {
+ 			$output .= "User-agent: *\n";
+ 			$output .= "Disallow: /";
+ 		}
+ 		return $output;
  	}
 
  	/**
@@ -377,6 +373,36 @@ if ( ! defined( 'WPINC' ) ) {
       		}
         }
         return $url;
+	}
+
+	/**
+	 * Filter to edit robots.txt on https vs. http
+	 *
+	 * @since  1.1.0
+	 * @param  string 	$output 	robots.txt text
+	 * @param  bool 	$public 	public switch
+	 * @return string         		robots.txt
+	 */
+	public function robots_txt_filter( $output, $public ) {
+		$options = $this->get_options();
+		if ( isset( $options[ 'http_on' ] ) && $options[ 'http_on' ] == 1 ) {
+			$output  = "# robots.txt generated by zon-enable-http plugin\n";
+			if (
+				// ZON live server config
+				( isset( $_SERVER[ 'HTTP_X_ZON_EDGE_PROTO' ] ) && 'http' == strtolower( $_SERVER[ 'HTTP_X_ZON_EDGE_PROTO' ] ) ) ||
+				// development environment
+				( !isset( $_SERVER[ 'HTTP_X_ZON_EDGE_PROTO' ] ) && 'http' == strtolower( $_SERVER[ 'REQUEST_SCHEME' ] ) )
+			) {
+				// http environment
+				$output  .= "# Mode: http\n\n";
+				$output .= $options[ 'http_robots_text' ];
+			} else {
+				// https environment
+				$output  .= "# Mode: https\n\n";
+				$output .= $options[ 'https_robots_text' ];
+			}
+		}
+		return $output;
 	}
 }
 
