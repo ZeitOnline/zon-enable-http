@@ -127,35 +127,7 @@ if ( ! defined( 'WPINC' ) ) {
  	 * @since  1.0.0
  	 */
  	public static function deactivate() {
- 		$deleted = self::getInstance()->delete_all_transients();
- 	}
 
- 	/**
- 	 * Query all transients from the database and hand them to delete_transient
- 	 * use to immediatly delete all cached frames on request or as garbage collection
- 	 *
- 	 * @since  1.0.0
- 	 * @return bool
- 	 */
- 	public function delete_all_transients() {
- 		global $wpdb;
- 		$return_check = true;
- 		$table = is_multisite() ? $wpdb->sitemeta : $wpdb->options;
- 		$needle = is_multisite() ? 'meta_key' : 'option_name';
- 		$name_chunk = is_multisite() ? '_site_transient_' : '_transient_';
- 		$query = "
- 			SELECT `$needle`
- 			FROM `$table`
- 			WHERE `$needle`
- 			LIKE '%transient_" . self::PREFIX . "%'";
- 		$results = $wpdb->get_results( $query );
- 		foreach( $results as $result ) {
- 			$transient = str_replace( $name_chunk, '', $result->$needle );
- 			if ( ! $this->delete_correct_transient( $transient ) ) {
- 				$return_check = false;
- 			}
- 		}
- 		return $return_check;
  	}
 
  	/**
@@ -186,52 +158,6 @@ if ( ! defined( 'WPINC' ) ) {
  		}
 
  		return update_option( self::SETTINGS, $options );
- 	}
-
- 	/**
- 	 * Set site transient if multisite environment
- 	 *
- 	 * @since 1.0.0
- 	 * @param string $transient  name of the transient
- 	 * @param mixed  $value      content to set as transient
- 	 * @param int    $expiration time in seconds for maximum cache time
- 	 * @return bool
- 	 */
- 	public function set_correct_transient( $transient, $value, $expiration ) {
- 		if ( is_multisite() ) {
- 			return set_site_transient( $transient, $value, $expiration );
- 		} else {
- 			return set_transient( $transient, $value, $expiration );
- 		}
- 	}
-
- 	/**
- 	 * Get site transient if multisite environment
- 	 *
- 	 * @since 1.0.0
- 	 * @param  string $transient name of the transient
- 	 * @return mixed             content stored in the transient or false if no adequate transient found
- 	 */
- 	public function get_correct_transient( $transient ) {
- 		if ( is_multisite() ) {
- 			return get_site_transient( $transient );
- 		} else {
- 			return get_transient( $transient );
- 		}
- 	}
-
- 	/**
- 	 * Use site transient if multisite environment
- 	 * @param  string $transient name of the transient to delete
- 	 *
- 	 * @return bool
- 	 */
- 	public function delete_correct_transient( $transient ) {
- 		if ( is_multisite() ) {
- 			return delete_site_transient( $transient );
- 		} else {
- 			return delete_transient( $transient );
- 		}
  	}
 
  	/**
