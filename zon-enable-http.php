@@ -127,7 +127,9 @@ if ( ! defined( 'WPINC' ) ) {
  	 * @since  1.0.0
  	 */
  	public static function deactivate() {
-
+ 		$options = $this->get_options();
+ 		$options[ 'http_on' ] = 0;
+ 		$this->update_options( $options );
  	}
 
  	/**
