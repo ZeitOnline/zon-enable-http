@@ -4,7 +4,7 @@ Donate link: https://www.zeit.de
 Tags: SSL, https, maintenance  
 Requires at least: 4.6.0  
 Tested up to: 4.9  
-Stable tag: 1.0.4  
+Stable tag: 1.1.1  
 License: GPLv3 or later  
 License URI: http://www.gnu.org/licenses/gpl-3.0.html  
 
@@ -21,6 +21,9 @@ While we switch our multiuser wordpress from http to https there will be a phase
 3. For local development w/o https activated, add `define( 'ZON_HTTP_ENABLED', true );` to your `local-config.php`
 
 == Changelog ==
+
+= 1.1.1 =
+* Fix bug where deactivate won't work
 
 = 1.1.0 =
 * Add conditional output of robots.txt
